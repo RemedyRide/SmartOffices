@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package distsys.smart_office;
+
+option java_package = "distsys.smart_office";
+option java_outer_classname = "SmartOfficeProto";
+
+// Light Switch
+service LightSwitch {
+    rpc TurnOn (LightRequest) returns (LightResponse);
+    rpc TurnOff (LightRequest) returns (LightResponse);
+}
+
+// Meeting room
+service MeetingRoomBooking {
+    rpc BookRoom (BookingRequest) returns (BookingResponse);
+    rpc CancelBooking (BookingRequest) returns (BookingResponse);
+}
+
+// Printer and scanner
+service PrinterScannerManagement {
+    rpc PrintDocument (PrintRequest) returns (PrintResponse);
+    rpc ScanDocument (ScanRequest) returns (ScanResponse);
+    rpc CheckPrinterStatus (PrinterStatusRequest) returns (PrinterStatusResponse);
+}
+
+//  Messages for LightSwitch
+message LightRequest {
+    string room = 1;
+}
+message LightResponse {
+    string message = 1;
+}
+
+//  Messages for MeetingRoomBooking
+message BookingRequest {
+    string room = 1;
+    string time = 2;
+}
+message BookingResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+//  Messages for PrinterScannerManagement
+message PrintRequest {
+    string documentName = 1;
+    int32 copies = 2;
+}
+message PrintResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message ScanRequest {
+    string format = 1; // e.g., PDF, JPEG
+}
+message ScanResponse {
+    bool success = 1;
+    string filePath = 2;
+}
+
+message PrinterStatusRequest {}
+message PrinterStatusResponse {
+    string status = 1; // e.g., "Online", "Out of Paper"
+}
