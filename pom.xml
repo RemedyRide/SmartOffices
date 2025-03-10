@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>SHWesd2</groupId>
-    <artifactId>SayHelloWorld</artifactId>
+    <artifactId>SmartOffice</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 
     <dependencies>

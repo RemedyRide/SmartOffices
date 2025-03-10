@@ -37,6 +37,7 @@ public class SmartOfficeServer {
             server.shutdown();
         }));
 
+        // Await server termination with a timeout
         server.awaitTermination();
     }
 
@@ -45,12 +46,20 @@ public class SmartOfficeServer {
 
         @Override
         public void turnOn(LightRequest request, StreamObserver<LightResponse> responseObserver) {
+            String room = request.getRoom(); // Get room from request
+
+            // Check if room is valid (e.g., non-empty)
+            if (room == null || room.isEmpty()) {
+                responseObserver.onError(new IllegalArgumentException("Room cannot be empty"));
+                return;
+            }
+
             // Logic to turn on the light
-            System.out.println("Turning on light in room: " + request.getRoom());
+            System.out.println("Turning on light in room: " + room);
 
             // Example response
             LightResponse response = LightResponse.newBuilder()
-                    .setMessage("Light turned on in room " + request.getRoom())
+                    .setMessage("Light turned on in room " + room)
                     .build();
 
             responseObserver.onNext(response);
@@ -59,12 +68,20 @@ public class SmartOfficeServer {
 
         @Override
         public void turnOff(LightRequest request, StreamObserver<LightResponse> responseObserver) {
+            String room = request.getRoom(); // Get room from request
+
+            // Check if room is valid (e.g., non-empty)
+            if (room == null || room.isEmpty()) {
+                responseObserver.onError(new IllegalArgumentException("Room cannot be empty"));
+                return;
+            }
+
             // Logic to turn off the light
-            System.out.println("Turning off light in room: " + request.getRoom());
+            System.out.println("Turning off light in room: " + room);
 
             // Example response
             LightResponse response = LightResponse.newBuilder()
-                    .setMessage("Light turned off in room " + request.getRoom())
+                    .setMessage("Light turned off in room " + room)
                     .build();
 
             responseObserver.onNext(response);
@@ -77,13 +94,22 @@ public class SmartOfficeServer {
 
         @Override
         public void bookRoom(BookingRequest request, StreamObserver<BookingResponse> responseObserver) {
+            String room = request.getRoom();  // Get room from request
+            String time = request.getTime();  // Get time from request
+
+            // Check if room or time is invalid
+            if (room == null || room.isEmpty() || time == null || time.isEmpty()) {
+                responseObserver.onError(new IllegalArgumentException("Room and time cannot be empty"));
+                return;
+            }
+
             // Logic to book a meeting room
-            System.out.println("Booking room: " + request.getRoom() + " at " + request.getTime());
+            System.out.println("Booking room: " + room + " at " + time);
 
             // Example response
             BookingResponse response = BookingResponse.newBuilder()
                     .setSuccess(true)
-                    .setMessage("Room " + request.getRoom() + " booked for " + request.getTime())
+                    .setMessage("Room " + room + " booked for " + time)
                     .build();
 
             responseObserver.onNext(response);
@@ -92,13 +118,16 @@ public class SmartOfficeServer {
 
         @Override
         public void cancelBooking(BookingRequest request, StreamObserver<BookingResponse> responseObserver) {
+            String room = request.getRoom();  // Get room from request
+            String time = request.getTime();  // Get time from request
+
             // Logic to cancel a meeting room booking
-            System.out.println("Canceling booking for room: " + request.getRoom() + " at " + request.getTime());
+            System.out.println("Canceling booking for room: " + room + " at " + time);
 
             // Example response
             BookingResponse response = BookingResponse.newBuilder()
                     .setSuccess(true)
-                    .setMessage("Booking for room " + request.getRoom() + " at " + request.getTime() + " has been canceled.")
+                    .setMessage("Booking for room " + room + " at " + time + " has been canceled.")
                     .build();
 
             responseObserver.onNext(response);
@@ -111,13 +140,22 @@ public class SmartOfficeServer {
 
         @Override
         public void printDocument(PrintRequest request, StreamObserver<PrintResponse> responseObserver) {
+            String documentName = request.getDocumentName();  // Get document name
+            int copies = request.getCopies();  // Get number of copies
+
+            // Check if document name is empty
+            if (documentName == null || documentName.isEmpty()) {
+                responseObserver.onError(new IllegalArgumentException("Document name cannot be empty"));
+                return;
+            }
+
             // Logic for printing the document
-            System.out.println("Printing document: " + request.getDocumentName() + " with " + request.getCopies() + " copies.");
+            System.out.println("Printing document: " + documentName + " with " + copies + " copies.");
 
             // Example response
             PrintResponse response = PrintResponse.newBuilder()
                     .setSuccess(true)
-                    .setMessage("Document " + request.getDocumentName() + " printed successfully.")
+                    .setMessage("Document " + documentName + " printed successfully.")
                     .build();
 
             responseObserver.onNext(response);
@@ -126,8 +164,16 @@ public class SmartOfficeServer {
 
         @Override
         public void scanDocument(ScanRequest request, StreamObserver<ScanResponse> responseObserver) {
+            String format = request.getFormat();  // Get the format
+
+            // Check if format is valid
+            if (format == null || format.isEmpty()) {
+                responseObserver.onError(new IllegalArgumentException("Format cannot be empty"));
+                return;
+            }
+
             // Logic for scanning the document
-            System.out.println("Scanning document in format: " + request.getFormat());
+            System.out.println("Scanning document in format: " + format);
 
             // Example response
             ScanResponse response = ScanResponse.newBuilder()

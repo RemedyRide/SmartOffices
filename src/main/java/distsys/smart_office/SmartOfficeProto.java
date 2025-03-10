@@ -1115,10 +1115,6 @@ public final class SmartOfficeProto {
 
 
       // @@protoc_insertion_point(builder_scope:distsys.smart_office.LightResponse)
-
-          Object setStatus(String light_turned_on) {
-              throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-          }
     }
 
     // @@protoc_insertion_point(class_scope:distsys.smart_office.LightResponse)
