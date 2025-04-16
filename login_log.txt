@@ -1,0 +1,3 @@
+[2025-04-16 22:07:02] Email: aasdg | Status: FAILED | Attempts: 1
+[2025-04-16 22:07:08] Email: aasdg@gmail.com | Status: FAILED | Attempts: 2
+[2025-04-16 22:07:09] Email: aasdg@gmail.com | Status: SUCCESS | Attempts: 0

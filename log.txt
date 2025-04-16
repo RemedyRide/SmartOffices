@@ -1,0 +1,6 @@
+2025-04-16 19:23:39 - Login attempt for email: dsf
+2025-04-16 19:23:39 - Invalid email attempt for: dsf
+2025-04-16 19:23:43 - Login attempt for email: dsf@gmail.com
+2025-04-16 19:23:43 - Password empty for email: dsf@gmail.com
+2025-04-16 19:23:44 - Login attempt for email: dsf@gmail.com
+2025-04-16 19:23:44 - Successful login for: dsf@gmail.com

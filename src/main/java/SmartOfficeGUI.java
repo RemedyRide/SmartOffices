@@ -3,9 +3,10 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 import java.util.regex.Pattern;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import javax.imageio.ImageIO;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class SmartOfficeGUI extends JFrame {
     private CardLayout cardLayout;
@@ -17,6 +18,8 @@ public class SmartOfficeGUI extends JFrame {
 
     private final Set<String> availableRooms = new TreeSet<>();
     private final Set<String> bookedRooms = new TreeSet<>();
+
+    private final String LOG_FILE = "login_log.txt";
 
     public SmartOfficeGUI() {
         setTitle("Smart Office Control");
@@ -65,6 +68,8 @@ public class SmartOfficeGUI extends JFrame {
         loginButton.addActionListener(e -> {
             String email = emailField.getText().trim();
             String password = new String(passwordField.getPassword());
+            LocalDateTime now = LocalDateTime.now();
+            String time = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
             boolean isValid = true;
 
@@ -84,6 +89,7 @@ public class SmartOfficeGUI extends JFrame {
                 } else {
                     statusLabel.setText(statusLabel.getText() + " Attempt " + loginAttempts + "/" + MAX_ATTEMPTS);
                 }
+                logLoginAttempt(email, false, time, loginAttempts);
                 return;
             }
 
@@ -91,6 +97,7 @@ public class SmartOfficeGUI extends JFrame {
             jwtToken = "mock-jwt-token-for-" + email;
             System.out.println("Login successful. JWT: " + jwtToken);
             loginAttempts = 0;
+            logLoginAttempt(email, true, time, loginAttempts);
             cardLayout.show(cardPanel, "Main");
         });
 
@@ -99,6 +106,15 @@ public class SmartOfficeGUI extends JFrame {
 
     private boolean isValidEmail(String email) {
         return Pattern.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$", email);
+    }
+
+    private void logLoginAttempt(String email, boolean success, String timestamp, int attempts) {
+        try (FileWriter writer = new FileWriter(LOG_FILE, true)) {
+            String status = success ? "SUCCESS" : "FAILED";
+            writer.write("[" + timestamp + "] Email: " + email + " | Status: " + status + " | Attempts: " + attempts + "\n");
+        } catch (IOException ex) {
+            System.err.println("Failed to write login log: " + ex.getMessage());
+        }
     }
 
     private JPanel createMainAppPanel() {
@@ -252,7 +268,7 @@ public class SmartOfficeGUI extends JFrame {
     }
 }
 
-// Custom BackgroundPanel class that loads images from filesystem
+// Background panel for image loading
 class BackgroundPanel extends JPanel {
     private Image backgroundImage;
 
