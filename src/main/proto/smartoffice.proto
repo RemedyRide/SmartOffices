@@ -37,6 +37,7 @@ message BookingRequest {
     string room = 1;
     string time = 2;
 }
+
 message BookingResponse {
     bool success = 1;
     string message = 2;
