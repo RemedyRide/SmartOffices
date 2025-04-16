@@ -1,23 +1,26 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.*;
 import java.util.regex.Pattern;
+import java.io.File;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 
 public class SmartOfficeGUI extends JFrame {
-
     private CardLayout cardLayout;
     private JPanel cardPanel;
-    private JPanel mainPanel;
-
     private String jwtToken = null;
 
     private int loginAttempts = 0;
     private final int MAX_ATTEMPTS = 3;
-    private final int LOCKOUT_TIME = 30000;
+
+    private final Set<String> availableRooms = new TreeSet<>();
+    private final Set<String> bookedRooms = new TreeSet<>();
 
     public SmartOfficeGUI() {
         setTitle("Smart Office Control");
-        setSize(500, 400);
+        setSize(600, 450);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -25,23 +28,31 @@ public class SmartOfficeGUI extends JFrame {
         cardPanel = new JPanel(cardLayout);
         add(cardPanel);
 
-        JPanel loginPanel = createLoginPanel();
-        JPanel mainAppPanel = createMainAppPanel();
+        populateRooms();
 
-        cardPanel.add(loginPanel, "Login");
-        cardPanel.add(mainAppPanel, "Main");
+        cardPanel.add(createLoginPanel(), "Login");
+        cardPanel.add(createMainAppPanel(), "Main");
 
         cardLayout.show(cardPanel, "Login");
     }
 
+    private void populateRooms() {
+        for (int i = 100; i <= 400; i += 100) {
+            for (int j = i; j <= i + 10; j++) {
+                availableRooms.add(String.valueOf(j));
+            }
+        }
+    }
+
     private JPanel createLoginPanel() {
         JPanel panel = new JPanel(new GridLayout(4, 2, 10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(40, 40, 40, 40));
+
         JTextField emailField = new JTextField();
         JPasswordField passwordField = new JPasswordField();
         JButton loginButton = new JButton("Login");
         JLabel statusLabel = new JLabel("");
 
-        panel.setBorder(BorderFactory.createEmptyBorder(40, 40, 40, 40));
         panel.add(new JLabel("Email:"));
         panel.add(emailField);
         panel.add(new JLabel("Password:"));
@@ -52,46 +63,34 @@ public class SmartOfficeGUI extends JFrame {
         panel.add(statusLabel);
 
         loginButton.addActionListener(e -> {
-            String email = emailField.getText();
+            String email = emailField.getText().trim();
             String password = new String(passwordField.getPassword());
 
-            if (loginAttempts >= MAX_ATTEMPTS) {
-                statusLabel.setText("Too many attempts. Please wait...");
-                return;
+            boolean isValid = true;
+
+            if (!isValidEmail(email)) {
+                statusLabel.setText("Invalid email.");
+                isValid = false;
+            } else if (password.isEmpty()) {
+                statusLabel.setText("Password cannot be empty.");
+                isValid = false;
             }
 
-            boolean isEmailValid = isValidEmail(email);
-            boolean isPasswordEmpty = password.isEmpty();
-
-            if (!isEmailValid || isPasswordEmpty) {
+            if (!isValid) {
                 loginAttempts++;
-                int remainingAttempts = MAX_ATTEMPTS - loginAttempts;
-
-                if (!isEmailValid) {
-                    statusLabel.setText("Invalid email. Attempt " + loginAttempts + " of " + MAX_ATTEMPTS);
-                } else {
-                    statusLabel.setText("Password required. Attempt " + loginAttempts + " of " + MAX_ATTEMPTS);
-                }
-
                 if (loginAttempts >= MAX_ATTEMPTS) {
-                    statusLabel.setText("Too many failed attempts. Locked for 30 seconds.");
+                    statusLabel.setText("Too many attempts. Login disabled.");
                     loginButton.setEnabled(false);
-
-                    new Timer(LOCKOUT_TIME, e1 -> {
-                        loginAttempts = 0;
-                        loginButton.setEnabled(true);
-                        statusLabel.setText("You can try logging in again.");
-                    }).start();
+                } else {
+                    statusLabel.setText(statusLabel.getText() + " Attempt " + loginAttempts + "/" + MAX_ATTEMPTS);
                 }
-
                 return;
             }
 
-            // Success
+            // Successful login
             jwtToken = "mock-jwt-token-for-" + email;
             System.out.println("Login successful. JWT: " + jwtToken);
             loginAttempts = 0;
-            statusLabel.setText("");
             cardLayout.show(cardPanel, "Main");
         });
 
@@ -99,145 +98,187 @@ public class SmartOfficeGUI extends JFrame {
     }
 
     private boolean isValidEmail(String email) {
-        String emailRegex = "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$";
-        return Pattern.matches(emailRegex, email);
+        return Pattern.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$", email);
     }
 
     private JPanel createMainAppPanel() {
         JPanel container = new JPanel(new BorderLayout());
 
-        mainPanel = new JPanel();
-        mainPanel.setLayout(new FlowLayout());
+        JPanel topButtons = new JPanel();
+        JButton lightBtn = new JButton("Smart Light");
+        JButton meetingBtn = new JButton("Meeting Room Booking");
+        JButton printerBtn = new JButton("Printer/Scanner");
 
-        JButton lightSwitchButton = new JButton("Light Switch Service");
-        JButton bookingButton = new JButton("Meeting Room Booking");
-        JButton printerScannerButton = new JButton("Printer/Scanner Management");
+        topButtons.add(lightBtn);
+        topButtons.add(meetingBtn);
+        topButtons.add(printerBtn);
 
-        mainPanel.add(lightSwitchButton);
-        mainPanel.add(bookingButton);
-        mainPanel.add(printerScannerButton);
+        JPanel contentPanel = new JPanel(new CardLayout());
 
-        JPanel servicesPanel = new JPanel(new CardLayout());
+        contentPanel.add(createLightPanel(), "Light");
+        contentPanel.add(createMeetingPanel(), "Meeting");
+        contentPanel.add(createPrinterPanel(), "Printer");
 
-        JPanel lightSwitchPanel = createLightSwitchPanel();
-        JPanel bookingPanel = createBookingPanel();
-        JPanel printerScannerPanel = createPrinterScannerPanel();
+        lightBtn.addActionListener(e -> switchPanel(contentPanel, "Light"));
+        meetingBtn.addActionListener(e -> switchPanel(contentPanel, "Meeting"));
+        printerBtn.addActionListener(e -> switchPanel(contentPanel, "Printer"));
 
-        servicesPanel.add(lightSwitchPanel, "LightSwitch");
-        servicesPanel.add(bookingPanel, "Booking");
-        servicesPanel.add(printerScannerPanel, "PrinterScanner");
-
-        lightSwitchButton.addActionListener(e -> ((CardLayout) servicesPanel.getLayout()).show(servicesPanel, "LightSwitch"));
-        bookingButton.addActionListener(e -> ((CardLayout) servicesPanel.getLayout()).show(servicesPanel, "Booking"));
-        printerScannerButton.addActionListener(e -> ((CardLayout) servicesPanel.getLayout()).show(servicesPanel, "PrinterScanner"));
-
-        container.add(mainPanel, BorderLayout.NORTH);
-        container.add(servicesPanel, BorderLayout.CENTER);
+        container.add(topButtons, BorderLayout.NORTH);
+        container.add(contentPanel, BorderLayout.CENTER);
 
         return container;
     }
 
-    private JPanel createLightSwitchPanel() {
-        JPanel panel = new JPanel(new GridLayout(2, 2));
+    private void switchPanel(JPanel panel, String name) {
+        CardLayout cl = (CardLayout) panel.getLayout();
+        cl.show(panel, name);
+    }
+
+    private JPanel createLightPanel() {
+        BackgroundPanel panel = new BackgroundPanel("resources/images/smartLights.jpg");
+        panel.setLayout(new GridLayout(2, 2, 10, 10));
 
         JTextField roomField = new JTextField();
-        JButton turnOnButton = new JButton("Turn On Light");
-        JButton turnOffButton = new JButton("Turn Off Light");
+        JButton onBtn = new JButton("Turn On");
+        JButton offBtn = new JButton("Turn Off");
 
-        turnOnButton.addActionListener(e -> {
+        onBtn.addActionListener(e -> {
             String room = roomField.getText();
-            if (!room.isEmpty()) {
-                System.out.println("Turning on light for " + room);
-            }
+            if (!room.isEmpty()) System.out.println("Turning ON light in room: " + room);
         });
 
-        turnOffButton.addActionListener(e -> {
+        offBtn.addActionListener(e -> {
             String room = roomField.getText();
-            if (!room.isEmpty()) {
-                System.out.println("Turning off light for " + room);
-            }
+            if (!room.isEmpty()) System.out.println("Turning OFF light in room: " + room);
         });
 
-        panel.add(new JLabel("Enter Room:"));
+        panel.add(new JLabel("Room Number:"));
         panel.add(roomField);
-        panel.add(turnOnButton);
-        panel.add(turnOffButton);
+        panel.add(onBtn);
+        panel.add(offBtn);
 
         return panel;
     }
 
-    private JPanel createBookingPanel() {
-        JPanel panel = new JPanel(new GridLayout(3, 2));
+    private JPanel createMeetingPanel() {
+        BackgroundPanel panel = new BackgroundPanel("/resources/images/meetingRoom.jpg");
+        panel.setLayout(new BorderLayout());
 
+        JPanel inputPanel = new JPanel(new GridLayout(3, 2, 10, 10));
         JTextField roomField = new JTextField();
         JTextField timeField = new JTextField();
-        JButton bookButton = new JButton("Book Room");
-        JButton cancelButton = new JButton("Cancel Booking");
+        JButton bookBtn = new JButton("Book");
+        JButton discoverBtn = new JButton("Discover Rooms");
 
-        bookButton.addActionListener(e -> {
-            String room = roomField.getText();
-            String time = timeField.getText();
-            if (!room.isEmpty() && !time.isEmpty()) {
-                System.out.println("Booking room " + room + " at " + time);
+        JTextArea outputArea = new JTextArea(8, 30);
+        outputArea.setEditable(false);
+
+        inputPanel.add(new JLabel("Room Number:"));
+        inputPanel.add(roomField);
+        inputPanel.add(new JLabel("Time:"));
+        inputPanel.add(timeField);
+        inputPanel.add(bookBtn);
+        inputPanel.add(discoverBtn);
+
+        JScrollPane scrollPane = new JScrollPane(outputArea);
+        panel.add(inputPanel, BorderLayout.NORTH);
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        bookBtn.addActionListener(e -> {
+            String room = roomField.getText().trim();
+            String time = timeField.getText().trim();
+
+            if (room.isEmpty() || time.isEmpty()) {
+                outputArea.append("Please enter room and time.\n");
+                return;
+            }
+
+            if (!availableRooms.contains(room)) {
+                outputArea.append("Room " + room + " is already booked or invalid.\n");
+            } else {
+                availableRooms.remove(room);
+                bookedRooms.add(room);
+                outputArea.append("Room " + room + " booked at " + time + ".\n");
             }
         });
 
-        cancelButton.addActionListener(e -> {
-            String room = roomField.getText();
-            String time = timeField.getText();
-            if (!room.isEmpty() && !time.isEmpty()) {
-                System.out.println("Canceling booking for room " + room + " at " + time);
-            }
+        discoverBtn.addActionListener(e -> {
+            outputArea.append("Available Rooms: " + availableRooms + "\n");
+            outputArea.append("Booked Rooms: " + bookedRooms + "\n");
         });
-
-        panel.add(new JLabel("Enter Room:"));
-        panel.add(roomField);
-        panel.add(new JLabel("Enter Time:"));
-        panel.add(timeField);
-        panel.add(bookButton);
-        panel.add(cancelButton);
 
         return panel;
     }
 
-    private JPanel createPrinterScannerPanel() {
-        JPanel panel = new JPanel(new GridLayout(3, 2));
+    private JPanel createPrinterPanel() {
+        BackgroundPanel panel = new BackgroundPanel("resources/images/printer.jpg");
+        panel.setLayout(new GridLayout(3, 2, 10, 10));
 
-        JTextField documentField = new JTextField();
+        JTextField docField = new JTextField();
         JTextField copiesField = new JTextField();
-        JButton printButton = new JButton("Print Document");
-        JButton scanButton = new JButton("Scan Document");
+        JButton printBtn = new JButton("Print");
+        JButton scanBtn = new JButton("Scan");
 
-        printButton.addActionListener(e -> {
-            String document = documentField.getText();
+        printBtn.addActionListener(e -> {
+            String doc = docField.getText();
             String copies = copiesField.getText();
-            if (!document.isEmpty() && !copies.isEmpty()) {
-                System.out.println("Printing document: " + document + " with " + copies + " copies.");
+            if (!doc.isEmpty() && !copies.isEmpty()) {
+                System.out.println("Printing " + doc + " x" + copies);
             }
         });
 
-        scanButton.addActionListener(e -> {
-            String document = documentField.getText();
+        scanBtn.addActionListener(e -> {
+            String doc = docField.getText();
             String format = copiesField.getText();
-            if (!document.isEmpty() && !format.isEmpty()) {
-                System.out.println("Scanning document: " + document + " in format " + format);
+            if (!doc.isEmpty() && !format.isEmpty()) {
+                System.out.println("Scanning " + doc + " as " + format);
             }
         });
 
-        panel.add(new JLabel("Enter Document Name:"));
-        panel.add(documentField);
-        panel.add(new JLabel("Enter Copies / Format:"));
+        panel.add(new JLabel("Document:"));
+        panel.add(docField);
+        panel.add(new JLabel("Copies/Format:"));
         panel.add(copiesField);
-        panel.add(printButton);
-        panel.add(scanButton);
+        panel.add(printBtn);
+        panel.add(scanBtn);
 
         return panel;
     }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            SmartOfficeGUI frame = new SmartOfficeGUI();
-            frame.setVisible(true);
+            new SmartOfficeGUI().setVisible(true);
         });
+    }
+}
+
+// Custom BackgroundPanel class that loads images from filesystem
+class BackgroundPanel extends JPanel {
+    private Image backgroundImage;
+
+    public BackgroundPanel(String imagePath) {
+        try {
+            File imageFile = new File(imagePath);
+            if (!imageFile.exists()) {
+                System.err.println("Image file not found at: " + imageFile.getAbsolutePath());
+            }
+            backgroundImage = ImageIO.read(imageFile);
+            System.out.println("Loaded image from: " + imageFile.getAbsolutePath());
+        } catch (IOException e) {
+            System.err.println("Failed to load background image: " + e.getMessage());
+        }
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (backgroundImage != null) {
+            g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
+        } else {
+            g.setColor(Color.LIGHT_GRAY);
+            g.fillRect(0, 0, getWidth(), getHeight());
+            g.setColor(Color.RED);
+            g.drawString("Image not loaded", 10, 20);
+        }
     }
 }
