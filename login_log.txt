@@ -1,3 +1,9 @@
 [2025-04-16 22:07:02] Email: aasdg | Status: FAILED | Attempts: 1
 [2025-04-16 22:07:08] Email: aasdg@gmail.com | Status: FAILED | Attempts: 2
 [2025-04-16 22:07:09] Email: aasdg@gmail.com | Status: SUCCESS | Attempts: 0
+[2025-04-17 13:06:10] Email: 123@gmail.com | Status: SUCCESS | Attempts: 0
+[2025-04-17 20:42:17] Email: sahjdghajs@gmail.com | Status: SUCCESS | Attempts: 0
+[2025-04-17 20:42:38] Email: asgdfags | Status: FAILED | Attempts: 1
+[2025-04-17 20:42:48] Email: asgdfags@gmail.com | Status: FAILED | Attempts: 2
+[2025-04-17 20:42:53] Email: asgdfags@gmail.com | Status: FAILED | Attempts: 3
+[2025-04-17 20:43:29] Email: asdg@gmail.com | Status: SUCCESS | Attempts: 0
